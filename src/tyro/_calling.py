@@ -5,6 +5,8 @@ from __future__ import annotations
 
 import dataclasses
 import itertools
+import os
+import shlex
 from functools import partial
 from typing import Any, Callable, Generic, TypeVar, Union
 
@@ -113,7 +115,14 @@ def callable_with_args(
                 should_cast = False
 
                 if _singleton.is_missing(value):
-                    value = arg.field.default
+                    # Try environment variable fallback before field default.
+                    env_resolved = _resolve_env_value(arg)
+                    if env_resolved is not None:
+                        value = env_resolved
+                        should_cast = True
+                        any_arguments_provided = True
+                    else:
+                        value = arg.field.default
 
                     # Consider a function with a positional sequence argument:
                     #
@@ -132,6 +141,20 @@ def callable_with_args(
                     ):
                         value = []
                         should_cast = True
+                elif (
+                    arg.lowered.action == "count"
+                    and arg.field.env_config is not None
+                    and value == arg.lowered.default
+                ):
+                    # Counter args can't use MISSING_NONPROP as the lowered
+                    # default because the backend increments from it. Instead,
+                    # check if the count is still at the initial default — if
+                    # so, no CLI flags were provided and we can try the env var.
+                    env_resolved = _resolve_env_value(arg)
+                    if env_resolved is not None:
+                        value = env_resolved
+                        should_cast = True
+                        any_arguments_provided = True
                 elif value_found:
                     # Value was found from the CLI, so we need to cast it with instance_from_str.
                     should_cast = True
@@ -329,3 +352,51 @@ def callable_with_args(
                 return out
 
             return with_instantiation_error, consumed_keywords  # type: ignore
+
+
+_BOOLISH_TRUE = frozenset({"true", "yes", "on", "1"})
+_BOOLISH_FALSE = frozenset({"false", "no", "off", "0"})
+
+
+def _parse_boolish(value: str) -> bool:
+    """Parse a string as a boolean, accepting common truthy/falsy values."""
+    lower = value.lower()
+    if lower in _BOOLISH_TRUE:
+        return True
+    if lower in _BOOLISH_FALSE:
+        return False
+    raise ValueError(
+        f"Cannot parse '{value}' as boolean."
+        f" Expected one of: {', '.join(sorted(_BOOLISH_TRUE | _BOOLISH_FALSE))}"
+    )
+
+
+def _resolve_env_value(
+    arg: _arguments.ArgumentDefinition,
+) -> Any | None:
+    """Try to resolve a value from an environment variable.
+
+    Returns the value in the format expected by ``instance_from_str``, or
+    ``None`` if no env config is set or the env var is unset.
+    """
+    if arg.field.env_config is None:
+        return None
+    raw = os.environ.get(arg.field.env_config.env_var)
+    if raw is None:
+        return None
+
+    # Boolean flags: instance_from_str is identity, expects bool.
+    if arg.lowered.action in ("store_true", "store_false", "boolean_optional_action"):
+        return _parse_boolish(raw)
+
+    # Counter args: instance_from_str is identity, expects int.
+    if arg.lowered.action == "count":
+        return int(raw)
+
+    # Standard args: instance_from_str expects list[str].
+    nargs = arg.lowered.nargs
+    if nargs is None or nargs in (1, "?"):
+        return [raw]
+
+    # Variable-length args: split the env value by shell rules.
+    return shlex.split(raw)

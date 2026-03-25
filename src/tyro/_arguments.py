@@ -6,6 +6,7 @@ from __future__ import annotations
 import collections.abc
 import dataclasses
 import json
+import os
 import shlex
 from functools import cached_property
 from typing import (
@@ -208,6 +209,7 @@ class ArgumentDefinition:
         _rule_handle_boolean_flags(self, lowered)
         _rule_apply_primitive_specs(self, lowered)
         _rule_counters(self, lowered)
+        _rule_apply_env(self, lowered)
         _rule_generate_helptext(self, lowered)
         _rule_set_name_or_flag_and_dest(self, lowered)
         _rule_positional_special_handling(self, lowered)
@@ -636,6 +638,35 @@ def _rule_positional_special_handling(
     return
 
 
+def _rule_apply_env(
+    arg: ArgumentDefinition,
+    lowered: LoweredArgumentDefinition,
+) -> None:
+    """When an env var is configured and currently set, make the argument
+    optional on the CLI. The actual value resolution happens in _calling.py.
+
+    For boolean flags and counters, the lowered default is changed to
+    MISSING_NONPROP so that _calling.py can distinguish "not provided on CLI"
+    from "explicitly set to default value" and check the env var.
+    """
+    if arg.field.env_config is None:
+        return
+    env_var = arg.field.env_config.env_var
+    if lowered.required and os.environ.get(env_var) is not None:
+        lowered.required = False
+    # Boolean flags use the field default as lowered.default, which prevents
+    # _calling.py from detecting "not provided". Switch to MISSING_NONPROP so
+    # the env var fallback path is reachable. Counters are excluded because the
+    # backend increments from the default; they are handled separately in
+    # _calling.py by comparing against the initial default.
+    if lowered.action in (
+        "store_true",
+        "store_false",
+        "boolean_optional_action",
+    ):
+        lowered.default = _singleton.MISSING_NONPROP
+
+
 def _rule_apply_argconf(
     arg: ArgumentDefinition,
     lowered: LoweredArgumentDefinition,
@@ -757,6 +788,9 @@ def generate_argument_helptext(
         elif _markers._OPTIONAL_GROUP in arg.field.markers:
             # Argument in an optional group, but which also has a default.
             behavior_hint = f"(default if used: {default_label})"
+        elif arg.field.env_config is not None and _singleton.is_missing(default):
+            # Required field made optional by an env var — no field default to show.
+            behavior_hint = "(from env)"
         else:
             behavior_hint = f"(default: {default_label})"
 
@@ -767,5 +801,15 @@ def generate_argument_helptext(
         )
     else:
         help_parts.append(fmt.text["bright_red"]("(required)"))
+
+    # Append environment variable hint.
+    if arg.field.env_config is not None:
+        env_var = arg.field.env_config.env_var
+        env_value = os.environ.get(env_var)
+        if env_value is not None:
+            env_hint = f"[env: {env_var}={env_value}]"
+        else:
+            env_hint = f"[env: {env_var}]"
+        help_parts.append(fmt.text["dim"](env_hint))
 
     return fmt.text(*help_parts, delimiter=" ")

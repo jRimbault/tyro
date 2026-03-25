@@ -53,6 +53,7 @@ class FieldDefinition:
     custom_constructor: bool
 
     argconf: _confstruct._ArgConfig
+    env_config: _confstruct._EnvConfig | None
     mutex_group: _MutexGroupConfig | None
 
     # Override the name in our kwargs. Useful whenever the user-facing argument name
@@ -142,6 +143,17 @@ class FieldDefinition:
             if argconf.help is not None:
                 helptext = argconf.help
 
+        # Get env config, deriving the variable name from the field when omitted.
+        env_configs = tuple(
+            x for x in metadata if isinstance(x, _confstruct._EnvConfig)
+        )
+        env_config: _confstruct._EnvConfig | None = None
+        if len(env_configs) > 0:
+            ec = env_configs[0]
+            if not ec.env_var:
+                ec = _confstruct._EnvConfig(env_var=name.upper())
+            env_config = ec
+
         # Get markers.
         markers = tuple(x for x in metadata if isinstance(x, _markers._Marker))
         mutually_exclusive_groups = tuple(
@@ -167,6 +179,7 @@ class FieldDefinition:
             markers=set(markers),
             custom_constructor=argconf.constructor_factory is not None,
             argconf=argconf,
+            env_config=env_config,
             mutex_group=mutually_exclusive_groups[0]
             if len(mutually_exclusive_groups) > 0
             else None,

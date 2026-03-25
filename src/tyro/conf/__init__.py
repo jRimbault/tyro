@@ -19,6 +19,7 @@ standard Python type annotations whenever possible.
 See :doc:`/examples/basics` for examples of using configuration markers.
 """
 
+from ._confstruct import Env as Env
 from ._confstruct import arg as arg
 from ._confstruct import subcommand as subcommand
 from ._markers import AvoidSubcommands as AvoidSubcommands

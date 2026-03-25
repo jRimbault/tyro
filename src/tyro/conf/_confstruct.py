@@ -116,6 +116,52 @@ def subcommand(
 
 
 @dataclasses.dataclass(frozen=True)
+class _EnvConfig:
+    """Configuration for reading argument values from environment variables."""
+
+    env_var: str
+
+
+def Env(var: str | None = None) -> object:
+    """Read an argument's value from an environment variable as fallback.
+
+    When a CLI argument is not provided, tyro will check the specified
+    environment variable before falling back to the field's default value.
+    Precedence: CLI argument > environment variable > default value.
+
+    If no variable name is given, it is derived from the field name by
+    converting to ``UPPER_SNAKE_CASE`` (e.g. field ``database_url`` becomes
+    ``DATABASE_URL``).
+
+    Example::
+
+        from dataclasses import dataclass
+        from typing import Annotated
+        import tyro
+
+        @dataclass
+        class Config:
+            # Falls back to AUTH_TOKEN env var if --token is not passed.
+            token: Annotated[str, tyro.conf.Env("AUTH_TOKEN")] = ""
+
+            # Derives env var name SECRET from the field name.
+            secret: Annotated[str, tyro.conf.Env()]
+
+            # Required on CLI unless DATABASE_URL env var is set.
+            database_url: Annotated[str, tyro.conf.Env("DATABASE_URL")]
+
+    Args:
+        var: The environment variable name to read from. When ``None``
+            (the default), the name is derived from the field name.
+
+    Returns:
+        A configuration object that should be attached to a type using ``Annotated[]``.
+    """
+    # Empty string signals "derive from field name" in _fields.py.
+    return _EnvConfig(env_var=var or "")
+
+
+@dataclasses.dataclass(frozen=True)
 class _ArgConfig:
     name: str | None
     metavar: str | None
