@@ -332,7 +332,6 @@ allows arguments to be intermixed more flexibly:
     <span style="font-weight: lighter; color: #808080">│</span>                     <span style="color: #008080">False)                                                  </span> <span style="font-weight: lighter; color: #808080">│</span>
     <span style="font-weight: lighter; color: #808080">╰</span><span style="font-weight: lighter; color: #808080">──────────────────────────────────────────────────────────────────────────────</span><span style="font-weight: lighter; color: #808080">╯</span>
     <span style="font-weight: lighter; color: #808080">╭</span><span style="font-weight: lighter; color: #808080">─</span> <span style="font-weight: lighter; color: #808080">optimizer</span><span style="font-weight: lighter; color: #808080"> options</span> <span style="font-weight: lighter; color: #808080">──────────────────────────────────────────────────────────╮</span>
-    
     <span style="font-weight: lighter; color: #808080">│</span> <span style="color: #008080">(source</span><span style="color: #008080"> subcommand:</span><span style="color: #008080"> optimizer:adam)                                         </span> <span style="font-weight: lighter; color: #808080">│</span>
     <span style="font-weight: lighter; color: #808080">│</span> <span style="font-weight: lighter; color: #808080">────────────────────────────────────────────────────────────────────────────</span> <span style="font-weight: lighter; color: #808080">│</span>
     <span style="font-weight: lighter; color: #808080">│</span> --optimizer.learning-rate <span style="font-weight: bold">FLOAT                                             </span> <span style="font-weight: lighter; color: #808080">│</span>
@@ -353,7 +352,7 @@ allows arguments to be intermixed more flexibly:
 
     <pre class="highlight" style="padding: 1em; box-sizing: border-box; font-size: 0.85em; line-height: 1.2em;">
     <strong style="opacity: 0.7; padding-bottom: 0.5em; display: inline-block"><span style="user-select: none">$ </span>python ./03_multiple_subcommands.py dataset:mnist optimizer:adam --help</strong>
-    <span style="font-weight: bold">usage:</span> ./03_multiple_subcommands.py optimizer:adam [-h] [OPTIMIZER:ADAM OPTIONS]
+    <span style="font-weight: bold">usage:</span> ./03_multiple_subcommands.py dataset:mnist optimizer:adam [-h] [OPTIMIZER:ADAM OPTIONS]
     
     <span style="font-weight: lighter; color: #808080">╭</span><span style="font-weight: lighter; color: #808080">─</span> <span style="font-weight: lighter; color: #808080">options</span> <span style="font-weight: lighter; color: #808080">─────────────────────────────────────────────────────────────────╮</span>
     <span style="font-weight: lighter; color: #808080">│</span> -h, --help  <span style="font-weight: lighter">show</span><span style="font-weight: lighter"> this</span><span style="font-weight: lighter"> help</span><span style="font-weight: lighter"> message</span><span style="font-weight: lighter"> and</span><span style="font-weight: lighter"> exit                              </span> <span style="font-weight: lighter; color: #808080">│</span>

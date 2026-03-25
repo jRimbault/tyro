@@ -1450,3 +1450,74 @@ the Rust/clap ecosystem.
     <span style="color: #800000">│</span> For full helptext, run <span style="font-weight: bold">./16_verbosity.py</span><span style="font-weight: bold"> --help          </span> <span style="color: #800000">│</span>
     <span style="color: #800000">╰</span><span style="color: #800000">───────────────────────────────────────────────────────────</span><span style="color: #800000">╯</span>
     </pre>
+
+.. _example-17_env:
+
+Environment Variable Fallback
+-----------------------------
+
+The :func:`tyro.conf.Env` annotation reads a CLI argument's value from an
+environment variable when no explicit CLI flag is provided. Precedence is:
+CLI argument > environment variable > default value.
+
+When called with no argument, ``Env()`` derives the environment variable
+name from the field name (``secret`` becomes ``SECRET``).
+
+
+.. code-block:: python
+    :linenos:
+
+    # 17_env.py
+    import dataclasses
+
+    from typing_extensions import Annotated
+
+    import tyro
+
+    @dataclasses.dataclass
+    class ServerConfig:
+        # Required on CLI unless SECRET env var is set.
+        # Env var name derived automatically from field name.
+        secret: Annotated[str, tyro.conf.Env()]
+
+        # Falls back to HOST env var if --host is not passed.
+        host: Annotated[str, tyro.conf.Env()] = "localhost"
+
+        # Falls back to APP_PORT env var if --port is not passed.
+        # Explicit env var name overrides derivation.
+        port: Annotated[int, tyro.conf.Env("APP_PORT")] = 8080
+
+    if __name__ == "__main__":
+        config = tyro.cli(ServerConfig)
+        print(f"host={config.host} port={config.port} secret={config.secret}")
+
+
+
+
+.. raw:: html
+
+    <pre class="highlight" style="padding: 1em; box-sizing: border-box; font-size: 0.85em; line-height: 1.2em;">
+    <strong style="opacity: 0.7; padding-bottom: 0.5em; display: inline-block"><span style="user-select: none">$ </span>python ./17_env.py --help</strong>
+    <span style="font-weight: bold">usage:</span> ./17_env.py [-h] --secret <span style="font-weight: bold">STR</span> [--host <span style="font-weight: bold">STR</span>] [--port <span style="font-weight: bold">INT</span>]
+    
+    <span style="font-weight: lighter; color: #808080">╭</span><span style="font-weight: lighter; color: #808080">─</span> <span style="font-weight: lighter; color: #808080">options</span> <span style="font-weight: lighter; color: #808080">────────────────────────────────────────────────────────────────────╮</span>
+    <span style="font-weight: lighter; color: #808080">│</span> -h, --help    <span style="font-weight: lighter">show</span><span style="font-weight: lighter"> this</span><span style="font-weight: lighter"> help</span><span style="font-weight: lighter"> message</span><span style="font-weight: lighter"> and</span><span style="font-weight: lighter"> exit                               </span> <span style="font-weight: lighter; color: #808080">│</span>
+    <span style="font-weight: lighter; color: #808080">│</span> --secret <span style="font-weight: bold">STR  </span><span style="font-weight: lighter">Required</span><span style="font-weight: lighter"> on</span><span style="font-weight: lighter"> CLI</span><span style="font-weight: lighter"> unless</span><span style="font-weight: lighter"> SECRET</span><span style="font-weight: lighter"> env</span><span style="font-weight: lighter"> var</span><span style="font-weight: lighter"> is</span><span style="font-weight: lighter"> set.</span><span style="font-weight: lighter"> Env</span><span style="font-weight: lighter"> var</span><span style="font-weight: lighter"> name    </span> <span style="font-weight: lighter; color: #808080">│</span>
+    <span style="font-weight: lighter; color: #808080">│</span>               <span style="font-weight: lighter">derived</span><span style="font-weight: lighter"> automatically</span><span style="font-weight: lighter"> from</span><span style="font-weight: lighter"> field</span><span style="font-weight: lighter"> name.</span> <span style="color: #e60000">(required)</span> <span style="font-weight: lighter">[env:       </span> <span style="font-weight: lighter; color: #808080">│</span>
+    <span style="font-weight: lighter; color: #808080">│</span>               <span style="font-weight: lighter">SECRET]                                                       </span> <span style="font-weight: lighter; color: #808080">│</span>
+    <span style="font-weight: lighter; color: #808080">│</span> --host <span style="font-weight: bold">STR    </span><span style="font-weight: lighter">Falls</span><span style="font-weight: lighter"> back</span><span style="font-weight: lighter"> to</span><span style="font-weight: lighter"> HOST</span><span style="font-weight: lighter"> env</span><span style="font-weight: lighter"> var</span><span style="font-weight: lighter"> if</span><span style="font-weight: lighter"> --host</span><span style="font-weight: lighter"> is</span><span style="font-weight: lighter"> not</span><span style="font-weight: lighter"> passed.</span> <span style="color: #008080">(default: </span> <span style="font-weight: lighter; color: #808080">│</span>
+    <span style="font-weight: lighter; color: #808080">│</span>               <span style="color: #008080">localhost)</span> <span style="font-weight: lighter">[env:</span><span style="font-weight: lighter"> HOST]                                        </span> <span style="font-weight: lighter; color: #808080">│</span>
+    <span style="font-weight: lighter; color: #808080">│</span> --port <span style="font-weight: bold">INT    </span><span style="font-weight: lighter">Falls</span><span style="font-weight: lighter"> back</span><span style="font-weight: lighter"> to</span><span style="font-weight: lighter"> APP_PORT</span><span style="font-weight: lighter"> env</span><span style="font-weight: lighter"> var</span><span style="font-weight: lighter"> if</span><span style="font-weight: lighter"> --port</span><span style="font-weight: lighter"> is</span><span style="font-weight: lighter"> not</span><span style="font-weight: lighter"> passed.       </span> <span style="font-weight: lighter; color: #808080">│</span>
+    <span style="font-weight: lighter; color: #808080">│</span>               <span style="font-weight: lighter">Explicit</span><span style="font-weight: lighter"> env</span><span style="font-weight: lighter"> var</span><span style="font-weight: lighter"> name</span><span style="font-weight: lighter"> overrides</span><span style="font-weight: lighter"> derivation.</span> <span style="color: #008080">(default:</span><span style="color: #008080"> 8080)</span>    <span style="font-weight: lighter; color: #808080">│</span>
+    <span style="font-weight: lighter; color: #808080">│</span>               <span style="font-weight: lighter">[env:</span><span style="font-weight: lighter"> APP_PORT]                                               </span> <span style="font-weight: lighter; color: #808080">│</span>
+    <span style="font-weight: lighter; color: #808080">╰</span><span style="font-weight: lighter; color: #808080">──────────────────────────────────────────────────────────────────────────────</span><span style="font-weight: lighter; color: #808080">╯</span>
+    </pre>
+
+
+
+.. raw:: html
+
+    <pre class="highlight" style="padding: 1em; box-sizing: border-box; font-size: 0.85em; line-height: 1.2em;">
+    <strong style="opacity: 0.7; padding-bottom: 0.5em; display: inline-block"><span style="user-select: none">$ </span>python ./17_env.py --secret s3cret --host 127.0.0.1</strong>
+    host=127.0.0.1 port=8080 secret=s3cret
+    </pre>

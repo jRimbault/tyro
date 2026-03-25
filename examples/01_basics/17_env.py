@@ -9,9 +9,9 @@ name from the field name (``secret`` becomes ``SECRET``).
 
 Usage:
 
-    python ./16_env.py --help
-    python ./16_env.py --secret s3cret --host 127.0.0.1
-    SECRET=s3cret HOST=0.0.0.0 APP_PORT=9090 python ./16_env.py
+    python ./17_env.py --help
+    python ./17_env.py --secret s3cret --host 127.0.0.1
+    SECRET=s3cret HOST=0.0.0.0 APP_PORT=9090 python ./17_env.py
 """
 
 import dataclasses
